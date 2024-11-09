@@ -1,4 +1,4 @@
-import { model, models, Schema } from "mongoose";
+import { Model, model, models, Schema } from "mongoose";
 import { PostSchema } from "./types";
 
 
@@ -12,4 +12,4 @@ export const postSchema = new Schema<PostSchema>({
     authorId: String
 })
 
-export const PostModel = models.Post || model<PostSchema>('Post', postSchema);
+export const PostModel = models.Post as Model<PostSchema> || model<PostSchema>('Post', postSchema);

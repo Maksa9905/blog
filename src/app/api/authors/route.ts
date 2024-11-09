@@ -1,6 +1,7 @@
 import { RequestUtils } from "@/app/server/handlers"
-import { AuthorDTO, AuthorDTOZodSchema, AuthorModel, AuthorSchema } from "@/app/server/types/authors";
-import { PostModel } from "@/app/server/types/posts";
+import { AuthorDTO, AuthorDTOZodSchema, AuthorModel, AuthorResponse, AuthorSchema } from "@/app/server/types/authors";
+import { PostModel, PostSchema } from "@/app/server/types/posts";
+import { VersionKey } from "@/app/server/types/shared";
 import mongoose, { Model } from "mongoose";
 
 
@@ -26,13 +27,13 @@ export const POST = async (request: Request) => {
 }
 
 export const GET = async (request: Request) => {
-    const queryParams = RequestUtils.getQuery<AuthorDTO>(request)
+    const { page, limit, ...queryParams } = RequestUtils.getQuery<AuthorDTO>(request)
     const authors = await AuthorModel.find(queryParams);
 
     const authorsWithPosts = await Promise.all(authors.map(async (author) => {
-        const { postIds, ...rest } = author.toJSON();
+        const { postIds, ...rest } = author;
 
-        const posts = await Promise.all(postIds.map(async id => await PostModel.findOne({_id: id})))
+        const posts = await Promise.all(postIds.map(async id => await PostModel.findOne({_id: id}) || {} as PostSchema));
 
         return({
             ...rest,
@@ -40,6 +41,7 @@ export const GET = async (request: Request) => {
         })
     }));
 
+    const response: AuthorResponse = RequestUtils.withPagination(authorsWithPosts, page, limit);
 
-    return new Response(JSON.stringify(authorsWithPosts));
+    return new Response(JSON.stringify(response));
 }

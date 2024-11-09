@@ -1,13 +1,27 @@
 import { connectToDataBase, RequestUtils } from "@/app/server/handlers";
-import { PostDTO, PostDTOZodSchema, PostModel } from "@/app/server/types/posts";
+import { AuthorModel, AuthorSchema } from "@/app/server/types/authors";
+import { PostDTO, PostDTOZodSchema, PostModel, PostResponse } from "@/app/server/types/posts";
 import mongoose from "mongoose";
 
 connectToDataBase();
 
 export async function GET(request: Request) {
-    const queryParams = RequestUtils.getQuery<PostDTO>(request)
+    const { page, limit, ...queryParams } = RequestUtils.getQuery<PostDTO>(request)
     const posts = await PostModel.find(queryParams);
-    return new Response(JSON.stringify(posts));
+
+    const postsWithAuthor = await Promise.all(posts.map(async (post) => {
+        const { authorId, ...rest } = post;
+
+        const author = await AuthorModel.findOne({_id: authorId}) || {} as AuthorSchema;
+        return {
+            ...rest,
+            author: author
+        }
+    }))
+
+    const response: PostResponse = RequestUtils.withPagination(postsWithAuthor, page, limit);
+
+    return new Response(JSON.stringify(response));
 }
 
 export async function POST(request: Request) {
