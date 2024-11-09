@@ -42,5 +42,5 @@ export type PostResponse = Response<{
     createdAt: string;
     lastUpdatedAt: string | null;
     tags: string[];
-    author: AuthorSchema,
+    author: AuthorSchema | null,
 }>;

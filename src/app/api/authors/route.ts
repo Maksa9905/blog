@@ -31,9 +31,9 @@ export const GET = async (request: Request) => {
     const authors = await AuthorModel.find(queryParams);
 
     const authorsWithPosts = await Promise.all(authors.map(async (author) => {
-        const { postIds, ...rest } = author;
+        const { postIds, ...rest } = author.toJSON();
 
-        const posts = await Promise.all(postIds.map(async id => await PostModel.findOne({_id: id}) || {} as PostSchema));
+        const posts = (await Promise.all(postIds.map(async id => await PostModel.findOne({_id: id}) || null))).filter(post => post !== null);
 
         return({
             ...rest,
